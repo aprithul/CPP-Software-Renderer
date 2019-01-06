@@ -48,87 +48,108 @@ struct Color
     unsigned int a;
 };
 
-struct Vector3d
+struct Vector4d
 {
     double x;
     double y;
     double z;
-        
-    Vector3d()
+    double w;
+ 
+    Vector4d()
     {
         x = 0;
         y = 0;
         z = 0;
+        w = 0;
     }
-    Vector3d(Point& p)
+    Vector4d(Point& p)
     {
         x = p.x;
         y = p.y;
         z = 0;
-    }
+        w = 1; 
+     }
     
-    Vector3d(double x, double y, double z)
+    Vector4d(double x, double y, double z)
     {
         this->x = x;
         this->y = y;
         this->z = z;
+        this->w = 0;
     }
-
-    Vector3d operator^(const Vector3d& v)
+    
+    Vector4d(double x, double y, double z, double w)
     {
-        Vector3d _v;
+        this->x = x;
+        this->y = y;
+        this->z = z;
+        this->w = w;
+    }
+    
+    Vector4d operator^(const Vector4d& v)
+    {
+        Vector4d _v;
         _v.x = y*v.z - z*v.y;
         _v.y = z*v.x - x*v.z;
         _v.z = x*v.y - y*v.x;
+        _v.w = 0;
         return _v;
      }
 
-    double operator*(const Vector3d& v)
+    double operator*(const Vector4d& v)
     {
-        double scaler = v.x*x + v.y*y + v.z*z;
+        double scaler = v.x*x + v.y*y + v.z*z + v.w*w;
         return scaler;
     }
 
     double get_length() const
     {
-       return sqrt( x*x + y*y + z*z ); 
+       return sqrt( x*x + y*y + z*z +w*w); 
     }
 
     double get_sqrd_length() const
     {
-        return (x*x + y*y + z*z);
+        return (x*x + y*y + z*z + w*w);
     }
 
-    double get_sqrd_distance(const Vector3d& v) const
+    double get_sqrd_distance(const Vector4d& v) const
     {
-        return (v.x-x)*(v.x-x) + (v.y-y)*(v.y-y) + (v.z-z)*(v.z-z);
+        return (v.x-x)*(v.x-x) + (v.y-y)*(v.y-y) + (v.z-z)*(v.z-z) + (v.w-w)*(v.w-w);
     }
     
-    Vector3d get_normalized() const
+    double get_distance(const Vector4d& v) const
     {
-        Vector3d _v;
+        return sqrt((v.x-x)*(v.x-x) + (v.y-y)*(v.y-y) + (v.z-z)*(v.z-z) + (v.w-w)*(v.w-w));
+    }
+    
+    Vector4d get_normalized() const
+    {
+        Vector4d _v;
         double len = get_length();      
         _v.x = x/len;
         _v.y = y/len;
         _v.z = z/len;
+        _v.w = w;
         return _v;
     }
     
-    Vector3d operator+(const Vector3d& v)
+    Vector4d operator+(const Vector4d& v)
     {
-        Vector3d _v;
+        Vector4d _v;
         _v.x = x+v.x;
         _v.y = y+v.y;
         _v.z = z+v.z;
+        _v.w = w;
         return _v;
     }
 
-    Vector3d operator-(const Vector3d& v)
+    Vector4d operator-(const Vector4d& v)
     {
-        Vector3d _v;
+        Vector4d _v;
         _v.x = x - v.x;
         _v.y = y - v.y;
         _v.z = z - v.z;
+        _v.w = w;
         return _v;
     } 
 };
@@ -158,6 +179,7 @@ double static lerp(double start, double end, double t)
 {
     return start+((end-start)*t); 
 }
+
 double static clamp(double min, double max, double value)
 {
     if(value<min)

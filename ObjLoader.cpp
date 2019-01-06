@@ -1,6 +1,6 @@
 #include "ObjLoader.hpp"
 
-void load_obj(const std::string& path, std::vector<utils::Vector3d>& obj_vertices, std::vector<utils::Vector3i>& obj_faces)
+void load_obj(const std::string& path, std::vector<utils::Vector4d>& obj_vertices, std::vector<utils::Vector3i>& obj_faces)
 {
     std::string vertex_tag = "v";
     std::string face_tag = "f";
@@ -11,7 +11,7 @@ void load_obj(const std::string& path, std::vector<utils::Vector3d>& obj_vertice
         while(std::getline(file,line))
         {
             std::string token;
-            utils::Vector3d vertex;
+            utils::Vector4d vertex;
             utils::Vector3i face;
             bool is_vertex = false;
             bool is_face = false;
@@ -53,7 +53,10 @@ void load_obj(const std::string& path, std::vector<utils::Vector3d>& obj_vertice
             }
             
             if(is_vertex)
+            {
+                vertex.w = 1.0;
                 obj_vertices.push_back(vertex);
+            }
             if(is_face)
                 obj_faces.push_back(face);
         }

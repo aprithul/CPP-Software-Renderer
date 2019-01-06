@@ -5,73 +5,52 @@
 #include <string>
 #include <sstream>
 #include <vector>
+#include "Global.hpp"
 #include "Utils.hpp"
 #include "ObjLoader.hpp"
 #include "Matrix.hpp"
-
-const double OBJ_TO_SCR_SCALE = 100.0;
-utils::Vector3d light_direction(0.577, 0.577, -0.577);
-utils::Vector3d camera_position(0,0,10.0);
-SDL_Renderer* renderer = NULL;
-const unsigned int SCREEN_WIDTH = 1280;
-const unsigned int SCREEN_HEIGHT = 720;
-utils::Vector3d light_target_point(SCREEN_WIDTH/2, SCREEN_HEIGHT/2,0);
-utils::Vector3d light_anchor_point(SCREEN_WIDTH/2, SCREEN_HEIGHT/2,-100.0);
+#include "Mesh.hpp"
+#include "Renderer.hpp"
+    
+unsigned int SCREEN_WIDTH = 1280;
+unsigned int SCREEN_HEIGHT = 720;
 float light_pan_speed = 8;
+utils::Color RED={0xFF,0x00,0x00,0xFF};
 
 void draw();
-void draw_point(utils::Point p, utils::Color c);
+/*void draw_point(utils::Point p, utils::Color c);
 void draw_line(utils::Point p0, utils::Point p1, utils::Color c);
-void draw_model_wireframe_orthographic(utils::Color color, std::vector<utils::Vector3d>& vertices, std::vector<utils::Vector3i>& faces);
+void draw_model_wireframe_orthographic(utils::Color color, std::vector<utils::Vector4d>& vertices, std::vector<utils::Vector3i>& faces);
 void draw_triangle(utils::Point p0, utils::Point p1, utils::Point p2, utils::Color c, utils::Color outline_color);
 void draw_rectangle(utils::Point p0, utils::Point p1, utils::Point p2, utils::Point p3, utils::Color c,bool do_fill);
 int rasterize_triangle(utils::Point p0, utils::Point p1, utils::Point p2, utils::Color color);
-utils::Point objectspace_to_screenspace(const utils::Vector3d& vertex);
+utils::Point objectspace_to_screenspace(const utils::Vector4d& vertex);
 void draw_zbuffer();
 void clear_zbuffer();
-std::vector<utils::Vector3d> points;
+std::vector<utils::Vector4d> points;
 std::vector<utils::Vector3i> faces;
-bool do_quit = false;
 float* z_buffer;
+*/
 
-enum RenderMode
-{
-    UNLIT    = 0,
-    LIT      = 1,
-    Z_BUFFER = 2
-};
-RenderMode render_mode = LIT;
+bool do_quit = false;
+rendering::Renderer* software_renderer; 
 
 //Screen dimension constants
 int main( int argc, char* args[] )
 {
-        std::cout<<sizeof(int)<<std::endl;
-        load_obj("teapot.obj",points,faces);
-        std::cout<<"Teapot vertex count: "<<points.size()<<std::endl;
-        std::cout<<"Teapot faces count: "<<faces.size()<<std::endl;
-        SDL_Event event;
-        z_buffer = new float[SCREEN_WIDTH * SCREEN_HEIGHT];
-        utils::Matrix4x4d A(1,2,3,4,1,2,3,4,1,2,3,4,1,2,3,4);        
-	utils::Matrix4x4d B(5,6,7,8,5,6,7,8,5,6,7,8,5,6,7,8);  
-        utils::Matrix4x4d C = A*B;
-        //std::cout<<"A(0,0): "<<A.get_value_at(0,0)<<std::endl;
-        C.print_matrix(); 
-        //Initialize SDL
-	if( SDL_Init( SDL_INIT_VIDEO ) < 0 )
-	{
-		printf( "SDL could not initialize! SDL_Error: %s\n", SDL_GetError() );
-	}           
-      
-       //The window we'll be rendering to
-	SDL_Window* window = SDL_CreateWindow("hello sdl", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,SCREEN_WIDTH,SCREEN_HEIGHT,SDL_WINDOW_SHOWN);  
-        if(window == NULL)
-        {
-            SDL_Quit();
-            return -1;
-        }
+    if( SDL_Init( SDL_INIT_VIDEO ) < 0 )
+    {
+            printf( "SDL could not initialize! SDL_Error: %s\n", SDL_GetError() );
+    }           
 
-	renderer = SDL_CreateRenderer(window,0,SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-                    
+    SDL_Event event;
+    software_renderer = new rendering::Renderer("Hello Soft-Rend", 1024,768); 
+    rendering::Mesh* teapot_mesh = new rendering::Mesh("teapot.obj",RED); 
+
+    software_renderer->add_to_render(teapot_mesh);
+
+       //The window we'll be rendering to
+                   
         while(!do_quit)
         {
             while(SDL_PollEvent(&event))
@@ -81,65 +60,47 @@ int main( int argc, char* args[] )
                 if(event.type == SDL_KEYUP)
                 {
                     if(event.key.keysym.sym == SDLK_l)
-                        render_mode = (render_mode == LIT?UNLIT:LIT);
+                        software_renderer->render_mode = ( software_renderer->render_mode == rendering::LIT?rendering::UNLIT:rendering::LIT);
                     if(event.key.keysym.sym == SDLK_z)
-                        render_mode = Z_BUFFER;
-                    std::cout<<"Render Mode : "<<render_mode<<std::endl;
+                        software_renderer->render_mode = rendering::Z_BUFFER;
+                    std::cout<<"Render Mode : "<< software_renderer->render_mode<<std::endl;
                                        
                 }    
                 if(event.type == SDL_KEYDOWN)
                 {  
                     if(event.key.keysym.sym == SDLK_RIGHT)
-                        light_target_point.x+=light_pan_speed;
+                        software_renderer->light_target_point.x+=light_pan_speed;
                     if(event.key.keysym.sym == SDLK_LEFT)
-                        light_target_point.x-=light_pan_speed;
+                        software_renderer->light_target_point.x-=light_pan_speed;
                     if(event.key.keysym.sym == SDLK_UP)
-                        light_target_point.y+=light_pan_speed;
+                        software_renderer->light_target_point.y+=light_pan_speed;
                     if(event.key.keysym.sym == SDLK_DOWN)
-                        light_target_point.y-=light_pan_speed;
+                        software_renderer->light_target_point.y-=light_pan_speed;
                 }
             }
-             
-            // initialize z buffer 
- 
-            SDL_SetRenderDrawColor(renderer,0x00,0x00, 0x00, 0xFF);
-            SDL_RenderClear(renderer);
-            
-            draw();
+            software_renderer->clear_zbuffer(); 
+            software_renderer->draw();
+            if(software_renderer->render_mode == rendering::Z_BUFFER)
+                software_renderer->draw_zbuffer();
+            software_renderer->present();
             SDL_Delay(16);                
 	}
-	SDL_DestroyWindow(window);
-        SDL_DestroyRenderer(renderer);
         SDL_Quit();        
         return 0;
 }
 
-int drawn_point_count;
-int skipped_point_count;
-void clear_zbuffer()
-{
-    for(int i=0; i<SCREEN_HEIGHT; i++)
-    {
-        for(int j=0; j<SCREEN_WIDTH; j++)
-        {
-            z_buffer[(i*SCREEN_WIDTH)+j] = -1;
-        }
-    } 
-    skipped_point_count = 0;
-    drawn_point_count = 0;
-}
-
+/*
 void draw()
-{
-    utils::Color RED={0xFF,0x00,0x00,0xFF};
-    
-    clear_zbuffer();   
-    draw_model_wireframe_orthographic(RED, points, faces);
-    if(render_mode == Z_BUFFER)    
-        draw_zbuffer();
-    SDL_RenderPresent(renderer);
-}
+{ 
 
+    software_renderer->clear_zbuffer();   
+    software_renderer->draw();
+    if( software_renderer->render_mode == rendering::Z_BUFFER)    
+        software_renderer->draw_zbuffer();
+
+}*/
+
+/*
 void draw_zbuffer()
 {
     float z_max = 0;
@@ -184,32 +145,22 @@ float max = -100000;
 float min =  100000;
 utils::Color BLACK = {0x00,0x00,0x00,0x00};
 
-void draw_model_wireframe_orthographic(utils::Color color, std::vector<utils::Vector3d>& vertices, std::vector<utils::Vector3i>& faces)
+void draw_model_wireframe_orthographic(utils::Color color, std::vector<utils::Vector4d>& vertices, std::vector<utils::Vector3i>& faces)
 {
     utils::Color outline_color = {0xFF, 0x00, 0x00, 0x00};
     for(int i=0; i<faces.size(); i++)
     {
-        utils::Vector3d v1 = vertices[faces[i].x-1];
-        utils::Vector3d v2 = vertices[faces[i].y-1];
-        utils::Vector3d v3 = vertices[faces[i].z-1];
+        utils::Vector4d v1 = vertices[faces[i].x-1];
+        utils::Vector4d v2 = vertices[faces[i].y-1];
+        utils::Vector4d v3 = vertices[faces[i].z-1];
         
         utils::Point p0 = objectspace_to_screenspace(v1);
         utils::Point p1 = objectspace_to_screenspace(v2);
         utils::Point p2 = objectspace_to_screenspace(v3);
-       /* if(p0.y == p1.y && p0.y== p2.y)
-        {
-            std::cout<<p0.y<<" "<<p1.y<<" "<<p2.y<<std::endl;
-            std::cout<<v1.y<<" "<<v2.y<<" "<<v3.y<<std::endl; 
-        }*/
-       /* float avg_z = (v1.z+v2.z+v3.z)/(float)3.0;
-        avg_z += 2.f;
-        float t = avg_z/4.f;
-        color.r = utils::lerp(0x00,0xFF,t); 
-        */
-        utils::Vector3d v_a = v2-v1;
-        utils::Vector3d v_b = v3-v1;
-        utils::Vector3d face_normal = (v_a^v_b).get_normalized();
-        utils::Vector3d light = (light_target_point - light_anchor_point).get_normalized();
+       utils::Vector4d v_a = v2-v1;
+        utils::Vector4d v_b = v3-v1;
+        utils::Vector4d face_normal = (v_a^v_b).get_normalized();
+        utils::Vector4d light = (light_target_point - light_anchor_point).get_normalized();
         double intensity = face_normal*light;
         // if(intensity>=0.0)
         {
@@ -224,7 +175,7 @@ void draw_model_wireframe_orthographic(utils::Color color, std::vector<utils::Ve
     }
 }
 
-utils::Point objectspace_to_screenspace(const utils::Vector3d& vertex)
+utils::Point objectspace_to_screenspace(const utils::Vector4d& vertex)
 {
     double sqrd_dist = (vertex.get_sqrd_distance(camera_position));
     utils::Point p((int) (vertex.x*OBJ_TO_SCR_SCALE),(int) (vertex.y*OBJ_TO_SCR_SCALE), sqrd_dist);
@@ -264,11 +215,7 @@ void draw_triangle(utils::Point p0, utils::Point p1, utils::Point p2, utils::Col
 // p2 other end point
 int rasterize_triangle(utils::Point p0, utils::Point p1, utils::Point p2, utils::Color color)
 {
-   /* std::cout<<"called"<<std::endl;
-    std::cout<<p0.x<<","<<p0.y<<std::endl;
-    std::cout<<p1.x<<","<<p1.y<<std::endl;
-    std::cout<<p2.x<<","<<p2.y<<std::endl;*/
-    int dir = utils::sign(p1.y - p0.y);
+   int dir = utils::sign(p1.y - p0.y);
     if(p1.y == p0.y)    
         return -1;  // couldn't rasterise, normal if no distance between anchor and midpoint
     int scan_buffer_height = std::abs(p1.y-p0.y)+1; 
@@ -288,13 +235,7 @@ int rasterize_triangle(utils::Point p0, utils::Point p1, utils::Point p2, utils:
     {
         scan_buffer[i*2] = scan_buffer[(i-1)*2]+dx_1;
         scan_buffer[(i*2)+1] = scan_buffer[((i-1)*2)+1]+dx_2;
-        /* 
-        utils::Point _p1((int)(scan_buffer[i*2]+0.5),low.y+i);
-        utils::Point _p2((int)(scan_buffer[(i*2)+1]+0.5),low.y+i);
-        draw_point(_p1, color);
-        draw_point(_p2, color);
-        */
-    }
+   }
 
     for(int i=p0.y, j=0; std::abs(p0.y-i) < scan_buffer_height; i+=dir,j++)
     {
@@ -371,4 +312,5 @@ void draw_line(utils::Point p0, utils::Point p1, utils::Color c)
             cum_error -= 1.0f;
         }
     }
-}               
+}
+*/               
