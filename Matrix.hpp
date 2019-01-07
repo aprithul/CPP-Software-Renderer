@@ -1,10 +1,10 @@
 #ifndef MATRIX_HPP
 #define MATRIX_HPP
 #include <iostream>
+#include "Utils.hpp"
 
 namespace utils
 {
-
     class Matrix4x4d
     {
         private:
@@ -86,21 +86,37 @@ namespace utils
 
             }
 
-             
+            utils::Vector4d operator*(const utils::Vector4d& vec) const
+            {
+                utils::Vector4d _v(  matrix_array[0][0] * vec.x + matrix_array[0][1] * vec.y +  matrix_array[0][2] * vec.z + matrix_array[0][3] * vec.w,
+                                     matrix_array[1][0] * vec.x + matrix_array[1][1] * vec.y +  matrix_array[1][2] * vec.z + matrix_array[1][3] * vec.w,
+                                     matrix_array[2][0] * vec.x + matrix_array[2][1] * vec.y +  matrix_array[2][2] * vec.z + matrix_array[2][3] * vec.w,
+                                     matrix_array[3][0] * vec.x + matrix_array[3][1] * vec.y +  matrix_array[3][2] * vec.z + matrix_array[3][3] * vec.w );
+                return _v;              
+            } 
+            
+            static Matrix4x4d get_identity()
+            {
+                return Matrix4x4d(  1, 0, 0, 0,
+                                    0, 1, 0, 0,
+                                    0, 0, 1, 0,
+                                    0, 0, 0, 1 );
+        
+            }
 
-    void print_matrix()
-    {
-        for(int i=0; i<4; i++)
-        {
-                for(int j=0;j<4; j++){
-                    std::cout<<get_value_at(i,j)<<" ";
-                    }
-            std::cout<<std::endl;
-        } 
-    }
-
-    };
     
+            void print_matrix()
+            {
+                for(int i=0; i<4; i++)
+                {
+                        for(int j=0;j<4; j++){
+                            std::cout<<get_value_at(i,j)<<" ";
+                            }
+                    std::cout<<std::endl;
+                } 
+            }
+
+    };    
 }
 
 #endif  

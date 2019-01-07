@@ -3,6 +3,7 @@
 #include <vector>
 #include <string>
 #include "Mesh.hpp"
+#include "Model.hpp"
 #include <SDL2/SDL.h>
 
 namespace rendering
@@ -18,7 +19,7 @@ namespace rendering
     class Renderer
     {
         public:
-            double OBJ_TO_SCR_SCALE = 100.0;
+            //double OBJ_TO_SCR_SCALE = 100.0;
             utils::Vector4d light_direction;
             utils::Vector4d camera_position; 
             utils::Vector4d light_target_point;
@@ -30,14 +31,14 @@ namespace rendering
             void present();
             void draw_zbuffer();
             void clear_zbuffer();
-            void add_to_render(Mesh* mesh);
+            void add_to_render(Model* model);
             ~Renderer();
 
         private:
-            std::vector<Mesh*> meshes_to_draw;
+            std::vector<Model*> models_to_draw;
             utils::Color BLACK = {0x00, 0x00, 0x00, 0xFF};
             float* z_buffer; 
-            void draw_mesh(utils::Color color, std::vector<utils::Vector4d>& vertices, std::vector<utils::Vector3i>& faces);
+            void draw_mesh(utils::Color color, std::vector<utils::Vector4d>& vertices, std::vector<utils::Vector3i>& faces, rendering::Transform& transform);
             utils::Point objectspace_to_screenspace(const utils::Vector4d& vertex);
             void rasterize_triangle(utils::Point p0, utils::Point p1, utils::Point p2, utils::Color color);
             void rasterize_right_angle_triangle(utils::Point p0, utils::Point p1, utils::Point p2, utils::Color color);

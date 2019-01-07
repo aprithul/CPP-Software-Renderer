@@ -60,7 +60,7 @@ struct Vector4d
         x = 0;
         y = 0;
         z = 0;
-        w = 0;
+        w = 1;
     }
     Vector4d(Point& p)
     {
@@ -75,7 +75,7 @@ struct Vector4d
         this->x = x;
         this->y = y;
         this->z = z;
-        this->w = 0;
+        this->w = 1;
     }
     
     Vector4d(double x, double y, double z, double w)
@@ -101,7 +101,17 @@ struct Vector4d
         double scaler = v.x*x + v.y*y + v.z*z + v.w*w;
         return scaler;
     }
-
+    
+    Vector4d operator*(double val)
+    {
+        Vector4d _v;
+        _v.x = x * val;
+        _v.y = y * val;
+        _v.z = z * val;
+        _v.w = w;
+        return _v;
+    }
+    
     double get_length() const
     {
        return sqrt( x*x + y*y + z*z +w*w); 
