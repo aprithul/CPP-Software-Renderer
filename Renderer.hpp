@@ -4,6 +4,7 @@
 #include <string>
 #include "Mesh.hpp"
 #include "Model.hpp"
+#include "Camera.hpp"
 #include <SDL2/SDL.h>
 
 namespace rendering
@@ -21,10 +22,11 @@ namespace rendering
         public:
             //double OBJ_TO_SCR_SCALE = 100.0;
             utils::Vector4d light_direction;
-            utils::Vector4d camera_position; 
+            rendering::Camera camera; 
             utils::Vector4d light_target_point;
             utils::Vector4d light_anchor_point;
             rendering::RenderMode render_mode;
+            bool perspective;
             
             Renderer(const std::string& window_title, int screen_width, int screen_height);
             void draw();

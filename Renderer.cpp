@@ -1,6 +1,6 @@
 #include "Renderer.hpp"
 
-rendering::Renderer::Renderer(const std::string& window_title, int screen_width, int screen_height):light_direction(0.577, 0.577, -0.577),camera_position(0,0,1000.0), light_target_point(screen_width/2, screen_height/2,0), light_anchor_point(screen_width/2, screen_height/2,-100.0)
+rendering::Renderer::Renderer(const std::string& window_title, int screen_width, int screen_height):light_direction(0.577, 0.577, -0.577), light_target_point(screen_width/2, screen_height/2,0), light_anchor_point(screen_width/2, screen_height/2,-100.0)
 {
     SCREEN_WIDTH = screen_width;
     SCREEN_HEIGHT = screen_height;
@@ -13,7 +13,7 @@ rendering::Renderer::Renderer(const std::string& window_title, int screen_width,
 
     renderer = SDL_CreateRenderer(window,0,SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
     z_buffer = new float[SCREEN_WIDTH*SCREEN_HEIGHT];
-    render_mode = Z_BUFFER;
+    render_mode = LIT;
 }
 
 rendering::Renderer::~Renderer()
@@ -88,11 +88,15 @@ void rendering::Renderer::present()
 
 void rendering::Renderer::draw_mesh(utils::Color color, std::vector<utils::Vector4d>& vertices, std::vector<utils::Vector3i>& faces, rendering::Transform& transform)
 {
+    utils::Matrix4x4d ptm = camera.get_perspective_matrix() * transform.transformation_matrix; 
     for(int i=0; i<faces.size(); i++)
     {
-        utils::Vector4d v1 = transform.transformation_matrix * vertices[faces[i].x-1];
-        utils::Vector4d v2 = transform.transformation_matrix * vertices[faces[i].y-1];
-        utils::Vector4d v3 = transform.transformation_matrix * vertices[faces[i].z-1];
+        utils::Vector4d v1 = ptm * vertices[faces[i].x-1];
+        v1 = v1*(1/v1.w);
+        utils::Vector4d v2 = ptm * vertices[faces[i].y-1];
+        v2 = v2*(1/v2.w);
+        utils::Vector4d v3 = ptm * vertices[faces[i].z-1];
+        v3 = v3*(1/v3.w);
         
         utils::Point p0 = objectspace_to_screenspace(v1);
         utils::Point p1 = objectspace_to_screenspace(v2);
@@ -111,7 +115,7 @@ void rendering::Renderer::draw_mesh(utils::Color color, std::vector<utils::Vecto
 
 utils::Point rendering::Renderer::objectspace_to_screenspace(const utils::Vector4d& vertex)
 {
-    double sqrd_dist = (vertex.get_sqrd_distance(camera_position));
+    double sqrd_dist = (vertex.get_sqrd_distance(camera.transform.position));
     utils::Point p((int) (vertex.x),(int) (vertex.y), sqrd_dist);
     return p;
 }

@@ -149,7 +149,7 @@ struct Vector4d
         _v.x = x+v.x;
         _v.y = y+v.y;
         _v.z = z+v.z;
-        _v.w = w;
+        _v.w = w+v.w;
         return _v;
     }
 
@@ -159,7 +159,7 @@ struct Vector4d
         _v.x = x - v.x;
         _v.y = y - v.y;
         _v.z = z - v.z;
-        _v.w = w;
+        _v.w = w - v.w;
         return _v;
     } 
 };
