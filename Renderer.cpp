@@ -12,7 +12,8 @@ rendering::Renderer::Renderer(const std::string& window_title, int screen_width,
     }
 
     renderer = SDL_CreateRenderer(window,0,SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-    z_buffer = new float[SCREEN_WIDTH*SCREEN_HEIGHT];
+    z_buffer_size = SCREEN_WIDTH*SCREEN_HEIGHT; 
+    z_buffer = new double[z_buffer_size];
     render_mode = LIT;
 }
 
@@ -20,6 +21,7 @@ rendering::Renderer::~Renderer()
 {
     SDL_DestroyWindow(window);
     SDL_DestroyRenderer(renderer); 
+    delete[] scan_buffer;
 }
 
 void rendering::Renderer::add_to_render(Model* model)
@@ -29,12 +31,9 @@ void rendering::Renderer::add_to_render(Model* model)
 
 void rendering::Renderer::clear_zbuffer()
 {
-    for(int i=0; i<SCREEN_HEIGHT; i++)
+    for(int i=0; i<z_buffer_size; i++)
     {
-        for(int j=0; j<SCREEN_WIDTH; j++)
-        {
-            z_buffer[(i*SCREEN_WIDTH)+j] = -1;
-        }
+        z_buffer[i] = -1;
     } 
 }
 
@@ -42,7 +41,7 @@ void rendering::Renderer::draw_zbuffer()
 {
     float z_max = 0;
     float z_min = 99999;
-    for(int i=0; i<SCREEN_HEIGHT*SCREEN_WIDTH; i++)
+    for(int i=0; i<z_buffer_size; i++)
     {
         if(z_buffer[i] > 0.0)
         {
@@ -57,10 +56,10 @@ void rendering::Renderer::draw_zbuffer()
     {
         for(int j=0; j<SCREEN_WIDTH; j++)
         {
-            float z_val = (z_buffer[(i*SCREEN_WIDTH)+j]-z_min) / (z_max-z_min);
-            if(z_val>=0.0)
+            double z_val = (z_buffer[(i*SCREEN_WIDTH)+j]-z_min) / (z_max-z_min);
+            if(z_val>0)
             {
-                unsigned int grey_level = utils::lerp(0xFF, 0x00, z_val);
+                unsigned int grey_level = utils::lerp(0x00, 0xFF, z_val);
                 utils::Color c = {grey_level, grey_level, grey_level, 0xFF};
                 utils::Point p(j-(SCREEN_WIDTH/2), i-SCREEN_HEIGHT/2);
                 draw_point(p,c);
@@ -74,10 +73,9 @@ void rendering::Renderer::draw()
    //std::cout<<"drawn"<<std::endl; 
     SDL_SetRenderDrawColor(renderer,0x00,0x00, 0x00, 0xFF);
     SDL_RenderClear(renderer);
-
     for(int i=0; i<models_to_draw.size(); i++)
     {
-       draw_mesh(models_to_draw[i]->mesh->color, models_to_draw[i]->mesh->vertices, models_to_draw[i]->mesh->faces, models_to_draw[i]->transform);
+       draw_mesh(models_to_draw[i]->mesh->color, models_to_draw[i]->mesh->vertices, models_to_draw[i]->mesh->faces,models_to_draw[i]->mesh->normals, models_to_draw[i]->transform);
     }
 }
 
@@ -86,7 +84,7 @@ void rendering::Renderer::present()
     SDL_RenderPresent(renderer);
 }
 
-void rendering::Renderer::draw_mesh(utils::Color color, std::vector<utils::Vector4d>& vertices, std::vector<utils::Vector3i>& faces, rendering::Transform& transform)
+void rendering::Renderer::draw_mesh(utils::Color color, std::vector<utils::Vector4d>& vertices, std::vector<utils::Vector3i>& faces, std::vector<utils::Vector4d>& normals, rendering::Transform& transform)
 {
     utils::Matrix4x4d ptm = camera.get_perspective_matrix() * transform.transformation_matrix; 
     for(int i=0; i<faces.size(); i++)
@@ -98,6 +96,12 @@ void rendering::Renderer::draw_mesh(utils::Color color, std::vector<utils::Vecto
         utils::Vector4d v3 = ptm * vertices[faces[i].z-1];
         v3 = v3*(1/v3.w);
         
+        utils::Vector4d n1 = (camera.get_perspective_matrix() * transform.rotation_matrix_xyz) * normals[faces[i].x-1]; 
+        utils::Vector4d n2 = (camera.get_perspective_matrix() * transform.rotation_matrix_xyz) * normals[faces[i].y-1]; 
+        utils::Vector4d n3 = (camera.get_perspective_matrix() * transform.rotation_matrix_xyz) * normals[faces[i].z-1]; 
+        
+        utils::Vector4d _n = (n1+n2+n3).get_normalized();
+        
         utils::Point p0 = objectspace_to_screenspace(v1);
         utils::Point p1 = objectspace_to_screenspace(v2);
         utils::Point p2 = objectspace_to_screenspace(v3);
@@ -106,10 +110,14 @@ void rendering::Renderer::draw_mesh(utils::Color color, std::vector<utils::Vecto
         utils::Vector4d v_b = v3-v1;
         utils::Vector4d face_normal = (v_a^v_b).get_normalized();
         utils::Vector4d light = (light_target_point - light_anchor_point).get_normalized();
-        double intensity = face_normal*light;
-        intensity = utils::clamp(0.2,1.0,intensity);
-        utils::Color _color = utils::lerp(BLACK,color , render_mode == LIT?intensity:1.0);  
-        rasterize_triangle(p0,p1,p2, _color);
+        //double intensity = face_normal*light;
+        double intensity =_n *light;
+        //if(intensity>0.0)
+        {
+            intensity = utils::clamp(0.25,1.0,intensity);
+            utils::Color _color = utils::lerp(BLACK,color , render_mode == LIT?intensity:1.0);  
+            rasterize_triangle(p0,p1,p2, _color);
+        }
     }
 }
 
@@ -143,7 +151,7 @@ void rendering::Renderer::rasterize_right_angle_triangle(utils::Point p0, utils:
     if(p1.y != p0.y)    
     {  // couldn't rasterise, normal if no distance between anchor and midpoint
         int scan_buffer_height = std::abs(p1.y-p0.y)+1; 
-        double* scan_buffer = new double[scan_buffer_height*2];
+        
         double dx_1 = 0.0;
         double dx_2 = 0.0;
            
@@ -152,14 +160,36 @@ void rendering::Renderer::rasterize_right_angle_triangle(utils::Point p0, utils:
         if(p2.y != p0.y) // should never be the case
             dx_2 = (p2.x - p0.x)/std::abs((double)(p2.y - p0.y)); 
         
-        scan_buffer[0] = p0.x;
-        scan_buffer[1] = p0.x;
+       // scan_buffer[0] = p0.x;
+       // scan_buffer[1] = p0.x;
+       
+        double dx_1_acum = p0.x;
+        double dx_2_acum = p0.x;
+         
+       // for(int i= p0.y, j=0; std::abs(i-p1.y) != 0; i+=dir)
+        int i=p0.y-dir;
+        int j=0; 
+        do{
+            i+=dir;
+            if(i<=(SCREEN_HEIGHT/2) && i>=-(SCREEN_HEIGHT/2))
+            {
+                scan_buffer[j*2] = dx_1_acum;
+                scan_buffer[(j*2)+1] = dx_2_acum;
+                j++;
+            }
+            else
+                std::cout<<"impossible"<<std::endl;
+            
+            dx_1_acum += dx_1;
+            dx_2_acum += dx_2;
+      
+         }while(std::abs(i-p1.y) != 0);
 
-        for(int i=1; i< scan_buffer_height; i++)
+        /*for(int i=1; i< scan_buffer_height; i++)
         {
             scan_buffer[i*2] = scan_buffer[(i-1)*2]+dx_1;
             scan_buffer[(i*2)+1] = scan_buffer[((i-1)*2)+1]+dx_2;
-        }
+        }*/
 
         for(int i=p0.y, j=0; std::abs(p0.y-i) < scan_buffer_height; i+=dir,j++)
         {
@@ -168,7 +198,6 @@ void rendering::Renderer::rasterize_right_angle_triangle(utils::Point p0, utils:
             utils::Point _p2( (int)(scan_buffer[(j*2)+1]+0.5),i, utils::lerp(p0.z, p2.z, ratio));
             draw_line( _p1,_p2,  color); 
         }
-        delete[] scan_buffer;
     } 
 }
 
@@ -192,9 +221,14 @@ void rendering::Renderer::draw_line(utils::Point p0, utils::Point p1, utils::Col
     int y = p0.y;
     float delta = std::abs((p1.y-p0.y)/(float)(p1.x-p0.x));
     float cum_error = 0.f;
-    for(int x = p0.x; x<p1.x; x++)
+            
+    for(int x = p0.x; x<=p1.x; x++)
     {
-        float _z = utils::lerp(p0.z, p1.z, (x-p0.x)/(double)(p1.x-p0.x));
+        double _z = 0.0; //utils::lerp(p0.z, p1.z, (x-p0.x)/(double)(p1.x-p0.x));
+        if(p0.x==p1.x)
+            _z = p0.z; 
+        else
+            _z = utils::lerp(p0.z, p1.z, (x-p0.x)/(double)(p1.x-p0.x));
         utils::Point p(x,y,_z);
         if(steep)
         {
@@ -202,7 +236,7 @@ void rendering::Renderer::draw_line(utils::Point p0, utils::Point p1, utils::Col
         }
         
         int index = (SCREEN_WIDTH*(p.y+(SCREEN_HEIGHT/2)))+ (p.x+(SCREEN_WIDTH/2));
-        if(z_buffer[index]<0.0 || p.z < z_buffer[index])
+        if(index<z_buffer_size && (z_buffer[index]<0.0 || p.z < z_buffer[index]))
         {
             z_buffer[index] = p.z;
             draw_point(p,c);
@@ -223,3 +257,4 @@ void rendering::Renderer::draw_point(utils::Point p, utils::Color color)
     SDL_SetRenderDrawColor(renderer,color.r,color.g,color.b,color.a);
     SDL_RenderDrawPoint(renderer, p.x+SCREEN_WIDTH/2, SCREEN_HEIGHT/2 - p.y);
 }
+

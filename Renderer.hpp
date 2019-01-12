@@ -6,7 +6,7 @@
 #include "Model.hpp"
 #include "Camera.hpp"
 #include <SDL2/SDL.h>
-
+#include <math.h>
 namespace rendering
 {
     enum RenderMode
@@ -39,18 +39,19 @@ namespace rendering
         private:
             std::vector<Model*> models_to_draw;
             utils::Color BLACK = {0x00, 0x00, 0x00, 0xFF};
-            float* z_buffer; 
-            void draw_mesh(utils::Color color, std::vector<utils::Vector4d>& vertices, std::vector<utils::Vector3i>& faces, rendering::Transform& transform);
+            double* z_buffer;
+            int z_buffer_size; 
+            void draw_mesh(utils::Color color, std::vector<utils::Vector4d>& vertices, std::vector<utils::Vector3i>& faces,std::vector<utils::Vector4d>& normals, rendering::Transform& transform);
             utils::Point objectspace_to_screenspace(const utils::Vector4d& vertex);
             void rasterize_triangle(utils::Point p0, utils::Point p1, utils::Point p2, utils::Color color);
             void rasterize_right_angle_triangle(utils::Point p0, utils::Point p1, utils::Point p2, utils::Color color);
             void draw_line(utils::Point p0, utils::Point p1, utils::Color c);
             void draw_point(utils::Point p, utils::Color color);
-
             SDL_Renderer* renderer = NULL;
             SDL_Window* window = NULL;
-            unsigned int SCREEN_WIDTH = 1280;
-            unsigned int SCREEN_HEIGHT = 720; 
+            int SCREEN_WIDTH = 1280;
+            int SCREEN_HEIGHT = 720; 
+            double* scan_buffer = new double[SCREEN_HEIGHT*2];
      };
 }
 

@@ -64,8 +64,6 @@ Transform* Transform::scale(double x, double y, double z)
 
 void Transform::create_transformation_matrix()
 {
-    transformation_matrix = translation_matrix * (rotation_matrix_x*rotation_matrix_y*rotation_matrix_z*scaling_matrix);
+    rotation_matrix_xyz = (rotation_matrix_x*rotation_matrix_y*rotation_matrix_z);
+    transformation_matrix = translation_matrix * (rotation_matrix_xyz*scaling_matrix);
 }
-
-
-

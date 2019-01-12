@@ -32,9 +32,11 @@ int main( int argc, char* args[] )
             printf( "SDL could not initialize! SDL_Error: %s\n", SDL_GetError() );
     }           
 
-    software_renderer = new rendering::Renderer("Hello Soft-Rend", 1024,768); 
+    software_renderer = new rendering::Renderer("Hello Soft-Rend", 640, 480); 
+    
     rendering::Mesh* teapot_mesh = new rendering::Mesh("teapot.obj",RED); 
-    rendering::Model* teapot_model = new rendering::Model(teapot_mesh, 100.0);
+    rendering::Model* teapot_model = new rendering::Model(teapot_mesh, 60.0);
+    
     software_renderer->add_to_render(teapot_model);
     software_renderer->camera.transform.position = utils::Vector4d(0,0,3000);
     while(!do_quit)

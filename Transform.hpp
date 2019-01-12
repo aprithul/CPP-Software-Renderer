@@ -14,6 +14,7 @@ namespace rendering
             utils::Vector4d rotation;
             utils::Vector4d local_scale = utils::Vector4d(1.0 ,1.0, 1.0, 1.0);
             utils::Matrix4x4d transformation_matrix = utils::Matrix4x4d::get_identity(); 
+            utils::Matrix4x4d rotation_matrix_xyz = utils::Matrix4x4d::get_identity();
             rendering::Transform* translate(double x, double y, double z);
             rendering::Transform* rotate(double x, double y, double z);
             rendering::Transform* scale(double x, double y, double z);

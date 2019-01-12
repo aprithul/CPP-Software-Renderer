@@ -12,6 +12,7 @@ namespace rendering
         public:
             std::vector<utils::Vector4d> vertices;
             std::vector<utils::Vector3i> faces;
+            std::vector<utils::Vector4d> normals;
             utils::Color color;
          
             Mesh(const std::string& file_name, utils::Color color);
