@@ -32,12 +32,24 @@ void load_obj(const std::string& path, std::vector<utils::Vector4d>& obj_vertice
                 }
                 else if(is_face)
                 {
+                    std::string face_vert_no;
+                    std::stringstream face_stream(token);
+                    while(true)
+                    {
+                        // needs to change behavior for vt and vn
+                        if(std::getline(face_stream,face_vert_no,'/'))
+                        {
+                            break;
+                        }
+                        
+                    }
+
                     if(count == 0)
-                        face.x = atoi(token.c_str());
+                        face.x = atoi(face_vert_no.c_str());
                     else if(count == 1)
-                        face.y = atoi(token.c_str());
+                        face.y = atoi(face_vert_no.c_str());
                     else if(count == 2)
-                        face.z = atoi(token.c_str());
+                        face.z = atoi(face_vert_no.c_str());
                     
                     count++;   
                 }

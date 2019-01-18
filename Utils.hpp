@@ -5,33 +5,6 @@
 
 namespace utils
 {
-struct Point
-{
-    int x;
-    int y;
-    double z;
-        
-    Point()
-    {
-        x=0;
-        y=0;
-        z=0.0;
-    }
-    
-    Point(int x, int y)
-    {
-        this->x = x;
-        this->y = y;
-        this->z = 0.0;
-    } 
-    
-    Point(int x, int y, double z)
-    {
-        this->x = x;
-        this->y = y;
-        this->z = z;
-    }    
-};
 
 struct Vector3i
 {
@@ -62,14 +35,22 @@ struct Vector4d
         z = 0;
         w = 1;
     }
-    Vector4d(Point& p)
+   /* Vector4d(Point& p)
     {
         x = p.x;
         y = p.y;
         z = 0;
         w = 1; 
      }
-    
+    */
+    Vector4d(double x, double y)
+    {
+        this->x = x;
+        this->y = y;
+        this->z = 0;
+        this->w = 1;
+    }
+
     Vector4d(double x, double y, double z)
     {
         this->x = x;
@@ -108,13 +89,13 @@ struct Vector4d
         _v.x = x * val;
         _v.y = y * val;
         _v.z = z * val;
-        _v.w = w;
+        _v.w = w;// * val;
         return _v;
     }
     
     double get_length() const
     {
-       return sqrt( x*x + y*y + z*z +w*w); 
+       return sqrt( x*x + y*y + z*z);// +w*w); 
     }
 
     double get_sqrd_length() const
@@ -139,7 +120,7 @@ struct Vector4d
         _v.x = x/len;
         _v.y = y/len;
         _v.z = z/len;
-        _v.w = w;
+        _v.w = w;///len;
         return _v;
     }
     
@@ -164,7 +145,49 @@ struct Vector4d
     } 
 };
     
+struct Point
+{
+    int x;
+    int y;
+    double z;
+    utils::Vector4d normal;
+          
+    Point()
+    {
+        x=0;
+        y=0;
+        z=0.0;
+    }
     
+    Point(int x, int y)
+    {
+        this->x = x;
+        this->y = y;
+        this->z = 0.0;
+    }
+
+    Point(int x, int y, int z)
+    {
+        this->x = x;
+        this->y = y;
+        this->z = z;
+    } 
+    
+    Point(int x, int y, double z, utils::Vector4d normal)
+    {
+        this->x = x;
+        this->y = y;
+        this->z = z;
+        this->normal = normal;
+    } 
+
+    Point operator-(const Point& p)
+    {
+        Point _p(x-p.x, y-p.y);
+        return _p;
+    }   
+};
+   
 int static sign(int val)
 {
     return val<0?-1:1;
@@ -210,7 +233,15 @@ utils::Color static lerp(utils::Color start, utils::Color end, float t)
     return _color;
 }
 
-
+utils::Vector4d static lerp(utils::Vector4d start, utils::Vector4d end, double t)
+{
+    utils::Vector4d _vec;
+    _vec.x = lerp(start.x, end.x, t);
+    _vec.y = lerp(start.y, end.y, t);
+    _vec.z = lerp(start.z, end.z, t);
+    _vec.w = lerp(start.w, end.w, t);
+    return _vec;
+}       
 
 }
 #endif

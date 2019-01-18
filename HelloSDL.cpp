@@ -16,7 +16,7 @@
 unsigned int SCREEN_WIDTH = 1280;
 unsigned int SCREEN_HEIGHT = 720;
 float light_pan_speed = 8;
-double translation_speed = 4;
+double translation_speed = 5;
 utils::Color RED={0xFF,0x00,0x00,0xFF};
 utils::Color GREEN={0x00,0xFF,0x00,0xFF};
 SDL_Event event;
@@ -32,13 +32,13 @@ int main( int argc, char* args[] )
             printf( "SDL could not initialize! SDL_Error: %s\n", SDL_GetError() );
     }           
 
-    software_renderer = new rendering::Renderer("Hello Soft-Rend", 640, 480); 
+    software_renderer = new rendering::Renderer("Pri's Renderer", 1024, 768); 
     
-    rendering::Mesh* teapot_mesh = new rendering::Mesh("teapot.obj",RED); 
-    rendering::Model* teapot_model = new rendering::Model(teapot_mesh, 60.0);
+    rendering::Mesh* teapot_mesh = new rendering::Mesh("head.obj",RED); 
+    rendering::Model* teapot_model = new rendering::Model(teapot_mesh, 300.0);
     
     software_renderer->add_to_render(teapot_model);
-    software_renderer->camera.transform.position = utils::Vector4d(0,0,3000);
+    software_renderer->camera.transform.position = utils::Vector4d(0,0,1000);
     while(!do_quit)
     {
         while(SDL_PollEvent(&event))
@@ -48,9 +48,7 @@ int main( int argc, char* args[] )
             if(event.type == SDL_KEYUP)
             {
                 if(event.key.keysym.sym == SDLK_l)
-                    software_renderer->render_mode =  ( software_renderer->render_mode == rendering::LIT?rendering::UNLIT:rendering::LIT);
-                if(event.key.keysym.sym == SDLK_z)
-                    software_renderer->render_mode = rendering::Z_BUFFER;
+                    software_renderer->render_mode = (rendering::RenderMode) (( software_renderer->render_mode + 1)%rendering::COUNT);
                 std::cout<<"Render Mode : "<< software_renderer->render_mode<<std::endl;
                                    
             }    
